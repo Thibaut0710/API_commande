@@ -210,9 +210,4 @@ C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\obj\Debug\net8.0\refint\
 C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\obj\Debug\net8.0\API_Commande.pdb
 C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\obj\Debug\net8.0\API_Commande.genruntimeconfig.cache
 C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\obj\Debug\net8.0\ref\API_Commande.dll
-C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\bin\Debug\net8.0\API_Produit.deps.json
-C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\bin\Debug\net8.0\API_Produit.runtimeconfig.json
-C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\bin\Debug\net8.0\API_Produit.exe
-C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\bin\Debug\net8.0\API_Produit.dll
-C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\bin\Debug\net8.0\API_Produit.pdb
 C:\Users\jlol0\Downloads\API_MSPR\API_MSPR\API_Commande\bin\Debug\net8.0\RabbitMQ.Client.dll

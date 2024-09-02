@@ -1,43 +1,23 @@
 ﻿using API_Commande.Context;
 using API_Commande.Models;
-using API_produit.Models;
 using System.Text.Json;
 
 namespace API_Commande.Service
 {
     public class CommandeService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IRabbitMQService _rabbitMQService;
 
-        public CommandeService(HttpClient httpClient)
+        public CommandeService(HttpClient httpClient, IRabbitMQService rabbitMQService)
         {
-            _httpClient = httpClient;
-        }
+            _rabbitMQService = rabbitMQService;
+    }
 
-        public async Task<List<Produit>> GetProduitsByIds(List<int> produitIds)
+        /*public async Task<List<Produit>> GetProduitsByIds(List<int> produitIds)
         {
-            try
-            {
-                var produitIdsString = string.Join("&", produitIds.Select(id => $"produitsId={id}"));
-                var response = await _httpClient.GetAsync($"Produit/produitInCommande?{produitIdsString}");
-
-                response.EnsureSuccessStatusCode();
-
-                // Lire le contenu JSON
-                var content = await response.Content.ReadAsStringAsync();
-                var produits = JsonSerializer.Deserialize<List<Produit>>(content, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true
-                });
-                return produits;
-            }
-            catch (Exception ex)
-            {
-                // Gérer les erreurs éventuelles
-                throw new Exception("Erreur lors de la récupération des produits", ex);
-            }
-        }
+          var response =  await _rabbitMQService.GetProduitsByIds(produitIds);
+            return response;
+        }*/
     }
 
 }

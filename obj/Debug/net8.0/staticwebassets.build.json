@@ -1,23 +1,11 @@
 {
   "Version": 1,
-  "Hash": "xFjjquIUKSqL8njvhpo05iiu8uzure3q3v63xWJE7q0=",
+  "Hash": "IhyqMZfQgwmXGqbI7sgd1A850AoLhqs6SbI/EPu8kUs=",
   "Source": "API_Commande",
   "BasePath": "_content/API_Commande",
   "Mode": "Default",
   "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [
-    {
-      "Identity": "C:\\Users\\jlol0\\Downloads\\API_MSPR\\API_MSPR\\API_produit\\API_Produit.csproj",
-      "Version": 2,
-      "Source": "API_Produit",
-      "GetPublishAssetsTargets": "ComputeReferencedStaticWebAssetsPublishManifest;GetCurrentProjectPublishStaticWebAssetItems",
-      "AdditionalPublishProperties": "Configuration=Debug;Platform=AnyCPU",
-      "AdditionalPublishPropertiesToRemove": "WebPublishProfileFile;TargetFramework",
-      "GetBuildAssetsTargets": "GetCurrentProjectBuildStaticWebAssetItems",
-      "AdditionalBuildProperties": "Configuration=Debug;Platform=AnyCPU",
-      "AdditionalBuildPropertiesToRemove": "WebPublishProfileFile;TargetFramework"
-    }
-  ],
+  "ReferencedProjectsConfiguration": [],
   "DiscoveryPatterns": [],
   "Assets": []
 }

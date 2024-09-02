@@ -1,11 +1,7 @@
 ﻿using API_Commande.Context;
 using API_Commande.Models;
-using API_Commande.Service;
-using API_produit.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
-using System.Text.Json;
 
 namespace API_Commande.Controllers
 {
@@ -14,12 +10,12 @@ namespace API_Commande.Controllers
     public class CommandeController : ControllerBase
     {
         private readonly CommandeContext _context;
-        private readonly CommandeService _commandeService;
+        //private readonly CommandeService _commandeService;
 
-        public CommandeController(CommandeContext context, CommandeService commandeService)
+        public CommandeController(CommandeContext context)
         {
             _context = context;
-            _commandeService = commandeService;
+            //_commandeService = commandeService;
         }
 
         // GET: api/orders
@@ -58,7 +54,32 @@ namespace API_Commande.Controllers
             return Ok(orders);
         }
 
+       /* [HttpGet("client/{id}/produits")]
+        public async Task<IActionResult> GetOrderByClientIdWithProducts(int id)
+        {
+            var commandes = await _context.Orders.Where(order => order.ClientID == id).ToListAsync();
+            if (commandes == null)
+            {
+                return NotFound(new { message = "Client non trouvé." });
+            }
 
+            var commandesAvecProduits = new List<object>();
+            foreach (var commande in commandes)
+            {
+                var produits = await _commandeService.GetProduitsByIds(commande.ProduitIDs);
+
+                // Ajouter la commande et ses produits à la liste
+                commandesAvecProduits.Add(new
+                {
+                    Commande = commande,
+                    Produits = produits
+                });
+            }
+            
+
+            // Retourner le client avec ses commandes
+            return Ok(commandesAvecProduits);
+        }
 
         [HttpGet("{id}/produits")]
         public async Task<IActionResult> GetClientWithOrders(int id)
@@ -83,7 +104,7 @@ namespace API_Commande.Controllers
                 Commande = commande,
                 Produits = produits
             });
-        }
+        }*/
 
 
         // POST: api/orders

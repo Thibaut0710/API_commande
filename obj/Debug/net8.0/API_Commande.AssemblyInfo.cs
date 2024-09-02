@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("API_Commande")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cfcb45644ea0987e5193d01258375601f2338f69")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+82eb2c986a20a75b4b06f08c2504a78e065f4d3b")]
 [assembly: System.Reflection.AssemblyProductAttribute("API_Commande")]
 [assembly: System.Reflection.AssemblyTitleAttribute("API_Commande")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

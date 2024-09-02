@@ -8,7 +8,6 @@
     ".NETCoreApp,Version=v8.0": {
       "API_Commande/1.0.0": {
         "dependencies": {
-          "API_Produit": "1.0.0",
           "Microsoft.EntityFrameworkCore": "8.0.7",
           "Microsoft.EntityFrameworkCore.Design": "8.0.7",
           "Pomelo.EntityFrameworkCore.MySql": "8.0.2",
@@ -553,17 +552,7 @@
           }
         }
       },
-      "System.Threading.Channels/7.0.0": {},
-      "API_Produit/1.0.0": {
-        "dependencies": {
-          "Microsoft.EntityFrameworkCore": "8.0.7",
-          "Pomelo.EntityFrameworkCore.MySql": "8.0.2",
-          "Swashbuckle.AspNetCore": "6.4.0"
-        },
-        "runtime": {
-          "API_Produit.dll": {}
-        }
-      }
+      "System.Threading.Channels/7.0.0": {}
     }
   },
   "libraries": {
@@ -907,11 +896,6 @@
       "sha512": "sha512-qmeeYNROMsONF6ndEZcIQ+VxR4Q/TX/7uIVLJqtwIWL7dDWeh0l1UIqgo4wYyjG//5lUNhwkLDSFl+pAWO6oiA==",
       "path": "system.threading.channels/7.0.0",
       "hashPath": "system.threading.channels.7.0.0.nupkg.sha512"
-    },
-    "API_Produit/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
     }
   }
 }
