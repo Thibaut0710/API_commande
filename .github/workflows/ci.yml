@@ -123,7 +123,7 @@ jobs:
       id: package_version
       uses: KageKirin/bump-csproj-version@v0
       with:
-        file: HotelInformationAPI/HotelInformationAPI.csproj
+        file: API_Commande/API_Command.csproj
         patch: true
 
     - name: Commit new version
@@ -146,7 +146,7 @@ jobs:
 
     - name: Compress Published APIs
       run: |
-        zip -r HotelInformationAPI.zip master/HotelInformationAPI/publish/HotelInformationAPI
+        zip -r HotelInformationAPI.zip master/API_Commande/publish/HotelInformationAPI
         zip -r RoomReservationAPI.zip master/RoomReservationAPI/publish/RoomReservationAPI
         zip -r UserRegistrationAPI.zip master/UserRegistrationAPI/publish/UserRegistrationAPI
     
