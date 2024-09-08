@@ -41,13 +41,13 @@ jobs:
         sudo mv chromedriver /usr/local/bin/
     
     - name: Install Dependencies
-      run: dotnet restore API_commande.sln
+      run: dotnet restore API_Commande.sln
 
     - name: Build
-      run: dotnet build API_commande.sln --no-restore
+      run: dotnet build API_Commande.sln --no-restore
 
     - name: Run Tests Non-Graphic
-      run: dotnet test API_commande.sln --no-build --verbosity normal --filter TestCategory!=UITest --logger "trx;LogFileName=non_graphic_tests.trx"
+      run: dotnet test API_Commande.sln --no-build --verbosity normal --filter TestCategory!=UITest --logger "trx;LogFileName=non_graphic_tests.trx"
       env:
         TOKEN_KEY_SECRET: ${{ secrets.TOKEN_KEY_SECRET }}
         DB_STRING_SECRET: ${{ secrets.DB_STRING_SECRET }}
@@ -61,7 +61,7 @@ jobs:
         reporter: dotnet-trx
 
     - name: Run Tests Selenium
-      run: dotnet test API_commande.sln --no-build --verbosity normal --filter TestCategory=UITest
+      run: dotnet test API_Commande.sln --no-build --verbosity normal --filter TestCategory=UITest
       continue-on-error: true
       env:
         TOKEN_KEY_SECRET: ${{ secrets.TOKEN_KEY_SECRET }}
@@ -82,18 +82,16 @@ jobs:
         dotnet-version: '8.x'
 
     - name: Install Dependencies
-      run: dotnet restore master/API_commande.sln
+      run: dotnet restore master/API_Commande.sln
 
     - name: Build
-      run: dotnet build master/API_commande.sln --no-restore
+      run: dotnet build master/API_Commande.sln --no-restore
 
-    - name: Publish APIs
+    - name: Publish API
       run: |
-        for api in HotelInformationAPI RoomReservationAPI UserRegistrationAPI; do
-          echo "Publishing $api..."
-          dotnet publish master/$api/$api.csproj -c Release -o master/$api/publish/$api
-          echo "Published $api to master/$api/publish/$api"
-        done
+        echo "Publishing API_Commande..."
+        dotnet publish master/API_Commande.csproj -c Release -o master/publish/API_Commande
+        echo "Published API_Commande to master/publish/API_Commande"
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
@@ -123,7 +121,7 @@ jobs:
       id: package_version
       uses: KageKirin/bump-csproj-version@v0
       with:
-        file: API_Commande/API_Command.csproj
+        file: API_Commande.csproj
         patch: true
 
     - name: Commit new version
@@ -146,38 +144,16 @@ jobs:
 
     - name: Compress Published APIs
       run: |
-        zip -r HotelInformationAPI.zip master/API_Commande/publish/HotelInformationAPI
-        zip -r RoomReservationAPI.zip master/RoomReservationAPI/publish/RoomReservationAPI
-        zip -r UserRegistrationAPI.zip master/UserRegistrationAPI/publish/UserRegistrationAPI
+        zip -r API_Commande.zip master/publish/API_Commande
     
-    - name: Upload Release Assets - HotelInformationAPI
+    - name: Upload Release Assets - API_Commande
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.MAX_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./HotelInformationAPI.zip
-        asset_name: HotelInformationAPI.zip
-        asset_content_type: application/zip
-
-    - name: Upload Release Assets - RoomReservationAPI
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.MAX_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./RoomReservationAPI.zip
-        asset_name: RoomReservationAPI.zip
-        asset_content_type: application/zip
-
-    - name: Upload Release Assets - UserRegistrationAPI
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.MAX_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./UserRegistrationAPI.zip
-        asset_name: UserRegistrationAPI.zip
+        asset_path: ./API_Commande.zip
+        asset_name: API_Commande.zip
         asset_content_type: application/zip
 
   deploy_pages:
