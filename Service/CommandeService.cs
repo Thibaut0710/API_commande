@@ -1,7 +1,9 @@
-﻿using API_Commande.Context;
-using API_Commande.Models;
-using API_produit.Models;
+﻿using API_produit.Models;
+using System.Net.Http;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace API_Commande.Service
 {
@@ -18,26 +20,29 @@ namespace API_Commande.Service
         {
             try
             {
+                // Créer la chaîne de requête avec les IDs des produits
                 var produitIdsString = string.Join("&", produitIds.Select(id => $"produitsId={id}"));
                 var response = await _httpClient.GetAsync($"Produit/produitInCommande?{produitIdsString}");
 
-                response.EnsureSuccessStatusCode();
+                response.EnsureSuccessStatusCode(); // Lève une exception si le code de statut est en erreur
 
-                // Lire le contenu JSON
                 var content = await response.Content.ReadAsStringAsync();
                 var produits = JsonSerializer.Deserialize<List<Produit>>(content, new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                     PropertyNameCaseInsensitive = true
                 });
-                return produits;
+
+                return produits ?? new List<Produit>(); // Retourner une liste vide si la désérialisation échoue
+            }
+            catch (HttpRequestException httpEx)
+            {
+                throw new Exception("Erreur HTTP lors de la récupération des produits", httpEx);
             }
             catch (Exception ex)
             {
-                // Gérer les erreurs éventuelles
                 throw new Exception("Erreur lors de la récupération des produits", ex);
             }
         }
     }
-
 }

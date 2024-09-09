@@ -1,11 +1,11 @@
 ﻿using API_Commande.Context;
 using API_Commande.Models;
 using API_Commande.Service;
-using API_produit.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
-using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace API_Commande.Controllers
 {
@@ -26,31 +26,31 @@ namespace API_Commande.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Commande>>> GetOrders()
         {
-            return await _context.Orders.ToListAsync();
+            return await _context.Orders.AsNoTracking().ToListAsync();
         }
 
         // GET: api/orders/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<Commande>> GetOrder(int id)
         {
-            var order = await _context.Orders.FindAsync(id);
+            var order = await _context.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
 
             if (order == null)
             {
                 return NotFound(new { message = "Commande non trouvée." });
             }
 
-            return order;
+            return Ok(order);
         }
 
-        // GET: api/orders/{id}
+        // GET: api/orders/client/{id}
         [HttpGet("client/{id}")]
-        public async Task<ActionResult<Commande>> GetOrderByClientId(int id)
+        public async Task<ActionResult<IEnumerable<Commande>>> GetOrderByClientId(int id)
         {
-            var orders = await _context.Orders.Where(order => order.ClientID == id).ToListAsync();
+            var orders = await _context.Orders.AsNoTracking()
+                .Where(order => order.ClientID == id).ToListAsync();
 
-            // Vérifier si des commandes existent pour ce client
-            if (orders == null || !orders.Any())
+            if (!orders.Any())
             {
                 return NotFound(new { message = "Aucune commande trouvée pour ce client." });
             }
@@ -58,38 +58,50 @@ namespace API_Commande.Controllers
             return Ok(orders);
         }
 
-
-
+        // GET: api/orders/{id}/produits
         [HttpGet("{id}/produits")]
-        public async Task<IActionResult> GetClientWithOrders(int id)
+        public async Task<IActionResult> GetOrderWithProducts(int id)
         {
-            // Récupérer la commande
-            var commande = await _context.Orders.FindAsync(id);
+            var commande = await _context.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
             if (commande == null)
             {
-                return NotFound(new { message = "Client non trouvé." });
+                return NotFound(new { message = "Commande non trouvée." });
             }
 
-            // Appeler l'API_Commande pour récupérer les commandes liées à ce client
-            var produits = await _commandeService.GetProduitsByIds(commande.ProduitIDs);
-            if (produits == null || !produits.Any())
+            try
             {
-                return NotFound(new { message = "Aucune commande trouvée pour ce client." });
-            }
+                var produits = await _commandeService.GetProduitsByIds(commande.ProduitIDs);
+                if (produits == null || !produits.Any())
+                {
+                    return NotFound(new { message = "Aucun produit trouvé pour cette commande." });
+                }
 
-            // Retourner le client avec ses commandes
-            return Ok(new
+                return Ok(new
+                {
+                    Commande = commande,
+                    Produits = produits
+                });
+            }
+            catch (Exception ex)
             {
-                Commande = commande,
-                Produits = produits
-            });
+                return StatusCode(500, new { message = "Erreur lors de la récupération des produits.", detail = ex.Message });
+            }
         }
-
 
         // POST: api/orders
         [HttpPost]
-        public async Task<ActionResult<Commande>> PostOrder(Commande order)
+        public async Task<ActionResult<Commande>> PostOrder([FromBody] Commande order)
         {
+            if (order == null)
+            {
+                return BadRequest(new { message = "Les informations de la commande ne peuvent pas être nulles." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
@@ -98,11 +110,16 @@ namespace API_Commande.Controllers
 
         // PUT: api/orders/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrder(int id, Commande order)
+        public async Task<IActionResult> PutOrder(int id, [FromBody] Commande order)
         {
             if (id != order.Id)
             {
                 return BadRequest(new { message = "L'ID de la commande ne correspond pas à l'ID dans l'URL." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
             }
 
             _context.Entry(order).State = EntityState.Modified;
@@ -122,6 +139,10 @@ namespace API_Commande.Controllers
                     throw;
                 }
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur lors de la mise à jour de la commande.", detail = ex.Message });
+            }
 
             return Ok(new { message = "Commande mise à jour avec succès." });
         }
@@ -137,7 +158,14 @@ namespace API_Commande.Controllers
             }
 
             _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur lors de la suppression de la commande.", detail = ex.Message });
+            }
 
             return Ok(new { message = "Commande supprimée avec succès." });
         }
