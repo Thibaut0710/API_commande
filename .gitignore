@@ -72,3 +72,6 @@ azure-pipelines.yml
 # Certificats SSL locaux
 *.pfx
 *.p12
+
+#Ignorer tous les repertoires Debug
+obj/Debug/
