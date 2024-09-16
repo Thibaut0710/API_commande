@@ -1,4 +1,4 @@
-﻿using API_Commande.Context;
+using API_Commande.Context;
 using API_Commande.Models;
 using API_Commande.Service;
 using Microsoft.AspNetCore.Mvc;
@@ -56,6 +56,34 @@ namespace API_Commande.Controllers
             }
 
             return Ok(orders);
+        }
+
+
+        [HttpGet("client/{id}/produits")]
+        public async Task<IActionResult> GetOrderByClientIdWithProducts(int id)
+        {
+            var commandes = await _context.Orders.Where(order => order.ClientID == id).ToListAsync();
+            if (commandes == null)
+            {
+                return NotFound(new { message = "Client non trouvé." });
+            }
+
+            var commandesAvecProduits = new List<object>();
+            foreach (var commande in commandes)
+            {
+                var produits = await _commandeService.GetProduitsByIds(commande.ProduitIDs);
+
+                // Ajouter la commande et ses produits à la liste
+                commandesAvecProduits.Add(new
+                {
+                    Commande = commande,
+                    Produits = produits
+                });
+            }
+
+
+            // Retourner le client avec ses commandes
+            return Ok(commandesAvecProduits);
         }
 
         // GET: api/orders/{id}/produits
