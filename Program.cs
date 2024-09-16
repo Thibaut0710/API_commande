@@ -17,7 +17,7 @@ builder.Services.AddHttpClient<CommandeService>(commande =>
 builder.Services.AddDbContext<CommandeContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
     new MySqlServerVersion(new Version(8, 0, 26))));
-
+builder.Services.AddScoped<CommandeService>();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 builder.Services.AddSingleton<RabbitMQConsumer>();
