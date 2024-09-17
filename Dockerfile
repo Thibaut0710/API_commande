@@ -8,6 +8,7 @@ COPY *.csproj ./
 RUN dotnet restore
 
 COPY . ./
+RUN dotnet build -c Release -o app/out
 RUN dotnet publish -c Release -o out
 
 RUN apt-get update && apt-get install -y mariadb-server

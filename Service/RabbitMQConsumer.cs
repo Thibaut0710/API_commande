@@ -8,6 +8,8 @@
         {
             _rabbitMQService = rabbitMQService;
             _rabbitMQService.CreateConsumer();
+            _rabbitMQService.CreateConsumerCommandeID();
+            _rabbitMQService.CreateConsumerCommandeIDProduits();
         }
     }
 }

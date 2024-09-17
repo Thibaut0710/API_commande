@@ -51,6 +51,8 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<CommandeService>();
 builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 builder.Services.AddSingleton<RabbitMQConsumer>();
+builder.WebHost.UseUrls("http://0.0.0.0:5239");
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -77,3 +79,4 @@ app.Services.GetRequiredService<IRabbitMQService>().CreateConsumer();
 app.Services.GetRequiredService<IRabbitMQService>().CreateConsumerCommandeID();
 app.Services.GetRequiredService<IRabbitMQService>().CreateConsumerCommandeIDProduits();
 app.Run();
+
