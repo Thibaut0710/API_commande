@@ -63,23 +63,12 @@ namespace API_Commande.Controllers
         public async Task<IActionResult> GetOrderByClientIdWithProducts(int id)
         {
             var commandes = await _context.Orders.Where(order => order.ClientID == id).ToListAsync();
-            if (commandes == null)
+            if (commandes == null  || !commandes.Any())
             {
                 return NotFound(new { message = "Client non trouvé." });
             }
 
-            var commandesAvecProduits = new List<object>();
-            foreach (var commande in commandes)
-            {
-                var produits = await _commandeService.GetProduitsByIds(commande.ProduitIDs);
-
-                // Ajouter la commande et ses produits à la liste
-                commandesAvecProduits.Add(new
-                {
-                    Commande = commande,
-                    Produits = produits
-                });
-            }
+            var commandesAvecProduits = await _commandeService.GetProduitsByIds(commandes);
 
 
             // Retourner le client avec ses commandes
@@ -90,24 +79,23 @@ namespace API_Commande.Controllers
         [HttpGet("{id}/produits")]
         public async Task<IActionResult> GetOrderWithProducts(int id)
         {
-            var commande = await _context.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
-            if (commande == null)
+            var commandes = await _context.Orders.Where(order => order.Id == id).ToListAsync();
+            if (commandes == null || !commandes.Any())
             {
                 return NotFound(new { message = "Commande non trouvée." });
             }
 
             try
             {
-                var produits = await _commandeService.GetProduitsByIds(commande.ProduitIDs);
-                if (produits == null || !produits.Any())
+                var response = await _commandeService.GetProduitsByIds(commandes);
+                if (response == null || !response.Any())
                 {
                     return NotFound(new { message = "Aucun produit trouvé pour cette commande." });
                 }
 
                 return Ok(new
                 {
-                    Commande = commande,
-                    Produits = produits
+                    Commande = response
                 });
             }
             catch (Exception ex)

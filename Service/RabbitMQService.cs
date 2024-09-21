@@ -1,4 +1,5 @@
 using API_Commande.Context;
+using API_Commande.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,7 +58,7 @@ public class RabbitMQService : IRabbitMQService
     public void CreateConsumer()
     {
         Console.WriteLine("Create Consumer");
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             var factory = new ConnectionFactory() { HostName = _hostName, UserName = _userName, Password = _password };
 
@@ -74,42 +75,86 @@ public class RabbitMQService : IRabbitMQService
                 {
                     byte[] body = ea.Body.ToArray();
                     var message = Encoding.UTF8.GetString(body);
+                    Console.WriteLine($" [x] Received {message}");
 
-                    using (JsonDocument doc = JsonDocument.Parse(message))
+                    try
                     {
-                        JsonElement root = doc.RootElement;
-
-                        if (root.TryGetProperty("Id", out JsonElement idElement))
+                        using (JsonDocument doc = JsonDocument.Parse(message))
                         {
-                            int id = idElement.GetInt32();
-                            Console.WriteLine($"Id: {id}");
+                            JsonElement root = doc.RootElement;
 
-                            using (var scope = _scopeFactory.CreateScope())
+                            if (root.TryGetProperty("Id", out JsonElement idElement))
                             {
-                                var context = scope.ServiceProvider.GetRequiredService<CommandeContext>();
-                                var orders = await context.Orders.Where(order => order.ClientID == id).ToListAsync();
-                                string json = JsonSerializer.Serialize(orders);
+                                int id = idElement.GetInt32();
+                                Console.WriteLine($"Id: {id}");
+
+                                using (var scope = _scopeFactory.CreateScope())
+                                {
+                                    var context = scope.ServiceProvider.GetRequiredService<CommandeContext>();
+                                    var orders = await context.Orders.Where(order => order.ClientID == id).ToListAsync();
+                                    string json = JsonSerializer.Serialize(orders);
+
+                                    // Créer les propriétés du message de réponse avec le CorrelationId d'origine
+                                    var replyProperties = channel.CreateBasicProperties();
+                                    replyProperties.CorrelationId = ea.BasicProperties.CorrelationId; // Utilisation du CorrelationId d'origine
+
+                                    // Envoyer la réponse à la queue de réponse (Channel_Client)
+                                    channel.BasicPublish(exchange: string.Empty,
+                                                         routingKey: ea.BasicProperties.ReplyTo, // La queue de réponse est spécifiée dans le message original
+                                                         basicProperties: replyProperties,
+                                                         body: Encoding.UTF8.GetBytes(json));
+
+                                    Console.WriteLine($"Processed {orders.Count} orders for client ID: {id}");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Propriété 'Id' non trouvée.");
+
+                                // Préparer le message d'erreur pour l'absence de la propriété 'Id'
+                                var errorResponse = new
+                                {
+                                    Error = "Propriété manquante",
+                                    Message = "Propriété 'Id' non trouvée."
+                                };
 
                                 // Créer les propriétés du message de réponse avec le CorrelationId d'origine
                                 var replyProperties = channel.CreateBasicProperties();
-                                replyProperties.CorrelationId = ea.BasicProperties.CorrelationId; // Utilisation du CorrelationId d'origine
+                                replyProperties.CorrelationId = ea.BasicProperties.CorrelationId;
 
-                                // Envoyer la réponse à la queue de réponse (Channel_Client)
-                                channel.BasicPublish(exchange: string.Empty,
-                                                     routingKey: ea.BasicProperties.ReplyTo, // La queue de réponse est spécifiée dans le message original
-                                                     basicProperties: replyProperties,
-                                                     body: Encoding.UTF8.GetBytes(json));
-
-                                Console.WriteLine($"Processed {orders.Count} orders for client ID: {id}");
+                                // Envoyer la réponse d'erreur à la queue de réponse
+                                string errorJsonResponse = JsonSerializer.Serialize(errorResponse);
+                                channel.BasicPublish(
+                                    exchange: string.Empty,
+                                    routingKey: ea.BasicProperties.ReplyTo,
+                                    basicProperties: replyProperties,
+                                    body: Encoding.UTF8.GetBytes(errorJsonResponse));
                             }
                         }
-                        else
-                        {
-                            Console.WriteLine("Propriété 'Id' non trouvée.");
-                        }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Erreur lors du traitement de la requête: {ex.Message}");
 
-                    Console.WriteLine($" [x] Received {message}");
+                        // Préparer le message d'erreur pour les exceptions
+                        var errorResponse = new
+                        {
+                            Error = "Erreur de traitement",
+                            Message = ex.Message
+                        };
+
+                        // Créer les propriétés du message de réponse avec le CorrelationId d'origine
+                        var replyProperties = channel.CreateBasicProperties();
+                        replyProperties.CorrelationId = ea.BasicProperties.CorrelationId;
+
+                        // Envoyer la réponse d'erreur à la queue de réponse
+                        string errorJsonResponse = JsonSerializer.Serialize(errorResponse);
+                        channel.BasicPublish(
+                            exchange: string.Empty,
+                            routingKey: ea.BasicProperties.ReplyTo,
+                            basicProperties: replyProperties,
+                            body: Encoding.UTF8.GetBytes(errorJsonResponse));
+                    }
 
                     // Acknowledge the message
                     channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
@@ -124,15 +169,17 @@ public class RabbitMQService : IRabbitMQService
                 {
                     // Add any additional logic needed to keep the consumer alive,
                     // such as waiting for cancellation tokens or other termination signals.
+                    await Task.Delay(1000); // Ajoute un délai pour éviter une boucle infinie qui consomme trop de CPU
                 }
             }
         });
     }
 
+
     public void CreateConsumerCommandeID()
     {
         Console.WriteLine("CreateConsumerCommandeID");
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             var factory = new ConnectionFactory() { HostName = _hostName, UserName = _userName, Password = _password };
 
@@ -176,12 +223,50 @@ public class RabbitMQService : IRabbitMQService
                             else
                             {
                                 Console.WriteLine("Propriétés 'clientId' et/ou 'commandeId' non trouvées.");
+
+                                // Préparer le message d'erreur pour l'absence de propriétés
+                                var errorResponse = new
+                                {
+                                    Error = "Propriétés manquantes",
+                                    Message = "Propriétés 'clientId' et/ou 'commandeId' non trouvées."
+                                };
+
+                                // Créer les propriétés du message de réponse avec le CorrelationId d'origine
+                                var replyProperties = channel.CreateBasicProperties();
+                                replyProperties.CorrelationId = ea.BasicProperties.CorrelationId;
+
+                                // Envoyer la réponse d'erreur à la queue de réponse
+                                string errorJsonResponse = JsonSerializer.Serialize(errorResponse);
+                                channel.BasicPublish(
+                                    exchange: string.Empty,
+                                    routingKey: ea.BasicProperties.ReplyTo,
+                                    basicProperties: replyProperties,
+                                    body: Encoding.UTF8.GetBytes(errorJsonResponse));
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Erreur lors du traitement de la requête: {ex.Message}");
+
+                        // Préparer le message d'erreur pour les exceptions
+                        var errorResponse = new
+                        {
+                            Error = "Erreur de traitement",
+                            Message = ex.Message
+                        };
+
+                        // Créer les propriétés du message de réponse avec le CorrelationId d'origine
+                        var replyProperties = channel.CreateBasicProperties();
+                        replyProperties.CorrelationId = ea.BasicProperties.CorrelationId;
+
+                        // Envoyer la réponse d'erreur à la queue de réponse
+                        string errorJsonResponse = JsonSerializer.Serialize(errorResponse);
+                        channel.BasicPublish(
+                            exchange: string.Empty,
+                            routingKey: ea.BasicProperties.ReplyTo,
+                            basicProperties: replyProperties,
+                            body: Encoding.UTF8.GetBytes(errorJsonResponse));
                     }
 
                     // Acknowledge the message after processing
@@ -197,16 +282,18 @@ public class RabbitMQService : IRabbitMQService
                 {
                     // Add any additional logic needed to keep the consumer alive,
                     // such as waiting for cancellation tokens or other termination signals.
+                    await Task.Delay(1000); // Ajoute un délai pour éviter une boucle infinie qui consomme trop de CPU
                 }
             }
         });
     }
 
 
+
     public void CreateConsumerCommandeIDProduits()
     {
         Console.WriteLine("channelCommandeClientProduit");
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             var factory = new ConnectionFactory() { HostName = _hostName, UserName = _userName, Password = _password };
 
@@ -242,20 +329,59 @@ public class RabbitMQService : IRabbitMQService
                                 Console.WriteLine($"clientId: {clientId}, commandeId: {commandeId}");
 
                                 // Process the request asynchronously
-                                string jsonOrders = await ProcessCommandeAsync(clientId, commandeId);
-                                var response = await SendMessageAndWaitForResponseAsync(jsonOrders, "produitInCommande", "commandeProduitReply");
+                                string jsonListOrders = await ProcessCommandeAsync(clientId, commandeId);
+                                var response = await SendMessageAndWaitForResponseAsync(jsonListOrders, "produitInCommande", "commandeProduitReply");
+
                                 // Send the response to the reply queue
                                 SendReply(channel, ea, response);
                             }
                             else
                             {
                                 Console.WriteLine("Propriétés 'clientId' et/ou 'commandeId' non trouvées.");
+
+                                // Préparer le message d'erreur pour l'absence de propriétés
+                                var errorResponse = new
+                                {
+                                    Error = "Propriétés manquantes",
+                                    Message = "Propriétés 'clientId' et/ou 'commandeId' non trouvées."
+                                };
+
+                                // Créer les propriétés du message de réponse avec le CorrelationId d'origine
+                                var replyProperties = channel.CreateBasicProperties();
+                                replyProperties.CorrelationId = ea.BasicProperties.CorrelationId;
+
+                                // Envoyer la réponse d'erreur à la queue de réponse
+                                string errorJsonResponse = JsonSerializer.Serialize(errorResponse);
+                                channel.BasicPublish(
+                                    exchange: string.Empty,
+                                    routingKey: ea.BasicProperties.ReplyTo,
+                                    basicProperties: replyProperties,
+                                    body: Encoding.UTF8.GetBytes(errorJsonResponse));
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Erreur lors du traitement de la requête: {ex.Message}");
+
+                        // Préparer le message d'erreur pour les exceptions
+                        var errorResponse = new
+                        {
+                            Error = "Erreur de traitement",
+                            Message = ex.Message
+                        };
+
+                        // Créer les propriétés du message de réponse avec le CorrelationId d'origine
+                        var replyProperties = channel.CreateBasicProperties();
+                        replyProperties.CorrelationId = ea.BasicProperties.CorrelationId;
+
+                        // Envoyer la réponse d'erreur à la queue de réponse
+                        string errorJsonResponse = JsonSerializer.Serialize(errorResponse);
+                        channel.BasicPublish(
+                            exchange: string.Empty,
+                            routingKey: ea.BasicProperties.ReplyTo,
+                            basicProperties: replyProperties,
+                            body: Encoding.UTF8.GetBytes(errorJsonResponse));
                     }
 
                     // Acknowledge the message after processing
@@ -271,10 +397,12 @@ public class RabbitMQService : IRabbitMQService
                 {
                     // Add any additional logic needed to keep the consumer alive,
                     // such as waiting for cancellation tokens or other termination signals.
+                    await Task.Delay(1000); // Ajoute un délai pour éviter une boucle infinie qui consomme trop de CPU
                 }
             }
         });
     }
+
 
     // Method to process the request and fetch the necessary data
     private async Task<string> ProcessCommandeAsync(int clientId, int commandeId)
@@ -298,12 +426,13 @@ public class RabbitMQService : IRabbitMQService
     }
 
 
-    public async Task<List<Dictionary<string, object>>> GetProduitsByIds(List<int> produitIds)
+
+    public async Task<List<Dictionary<string, object>>> GetProduitsByIds(List<Commande> commandes)
     {
         Console.WriteLine("------------------------------------------3------------------------------------------------------------------------------------");
         try
         {
-            var jsonString = JsonSerializer.Serialize(produitIds);
+            var jsonString = JsonSerializer.Serialize(commandes);
             Console.WriteLine(jsonString);
             var response = await SendMessageAndWaitForResponseAsync(jsonString, "produitInCommande", "channel_commande_produit_details");
             Console.WriteLine("RESPONSE", response);

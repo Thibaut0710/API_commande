@@ -26,7 +26,13 @@ if [ -z "$DB_EXISTS" ]; then
 else
     echo "Database '${MYSQL_DATABASE}' already initialized. Skipping initialization."
 fi
+echo "Generating new migrations..."
+dotnet ef migrations add UpdateMigration --project /app/API_Commande.csproj
+
+echo "Running migrations..."
+dotnet ef database update --project /app/API_Commande.csproj
 
 # Lancer l'application .NET
+echo "Starting the .NET application..."
 dotnet API_Commande.dll
 

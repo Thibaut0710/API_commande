@@ -13,9 +13,9 @@ namespace API_Commande.Service
             _rabbitMQService = rabbitMQService;
         }
 
-        public async Task<List<Dictionary<string, object>>> GetProduitsByIds(List<int> produitIds)
+        public async Task<List<Dictionary<string, object>>> GetProduitsByIds(List<Commande> commandes)
         {
-            var response = await _rabbitMQService.GetProduitsByIds(produitIds);
+            var response = await _rabbitMQService.GetProduitsByIds(commandes);
             return response;
         }
     }
