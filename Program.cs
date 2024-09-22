@@ -29,7 +29,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
-
+builder.Services.AddAuthorization();
 // Configuration CORS
 builder.Services.AddCors(options =>
 {
@@ -68,7 +68,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//app.UseCors("CorsPolicy");
+app.UseCors("CorsPolicy");
 
 // Activer l'authentification et l'autorisation
 app.UseAuthentication();

@@ -1,6 +1,7 @@
 using API_Commande.Context;
 using API_Commande.Models;
 using API_Commande.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ namespace API_Commande.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CommandeController : ControllerBase
     {
         private readonly CommandeContext _context;
