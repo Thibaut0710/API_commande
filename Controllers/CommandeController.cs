@@ -28,7 +28,12 @@ namespace API_Commande.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Commande>>> GetOrders()
         {
-            return await _context.Orders.AsNoTracking().ToListAsync();
+            var commandes = await _context.Orders.AsNoTracking().ToListAsync();
+            if (commandes == null || !commandes.Any())
+            {
+                return NotFound();
+            }
+            return Ok(commandes);
         }
 
         // GET: api/orders/{id}
