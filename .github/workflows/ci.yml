@@ -1,0 +1,186 @@
+name: CI/CD
+
+
+on:
+  push:
+    branches: 
+      - main
+      - ci-cd
+  pull_request:
+    types: [closed]
+    branches: 
+      - main
+      - ci-cd
+  release:
+    types: [release]
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '8.x'
+        
+    - name: Setup XUnit
+      run: |
+        dotnet add package xunit
+        dotnet add package xunit.runner.visualstudio
+        
+    - name: Setup InMemory
+      run: dotnet add package Microsoft.EntityFrameworkCore.InMemory
+      
+    - name: Setup Newtonsoft.Json
+      run: dotnet add package Newtonsoft.Json
+      
+    - name: Setup Microsoft.NET.Test.Sdk
+      run: dotnet add package Microsoft.NET.Test.Sdk
+      
+    - name: Clean
+      run: |
+        dotnet clean
+        dotnet clean
+    
+    - name: Install Dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: |
+        dotnet build --no-restore
+
+    - name: Run Unit Tests
+      run: dotnet test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        path: master
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: '8.x'
+
+    - name: Install Dependencies
+      run: dotnet restore master/API_Commande.csproj
+
+    - name: Build
+      run: dotnet build master/API_Commande.csproj --no-restore
+
+    - name: Publish API
+      run: |
+        echo "Publishing API_Commande..."
+        dotnet publish master/API_Commande.csproj -c Release -o master/publish/API_Commande
+        echo "Published API_Commande to master/publish/API_Commande"
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: release_artifact
+        path: master
+        retention-seconds: 600
+
+
+  docker-container-artifact:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t api-commande:latest .
+
+      - name: Save Docker image to file
+        run: |
+          docker save api-commande:latest | gzip > api-commande-latest.tar.gz
+
+      - name: Save Docker image to file
+        run: |
+          docker save api-commande:latest | gzip > api-commande-latest.tar.gz
+          
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-commande-docker-image
+          path: api-commande-latest.tar.gz
+          retention-seconds: 600
+
+  release:
+    needs: docker-container-artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+        
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-commande-docker-image
+          path: ./
+
+      - name: Generate dynamic tag name
+        id: generate_tag
+        run: |
+          DATE_TAG=$(date +'%Y%m%d%H%M%S')
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          TAG_NAME="release-$DATE_TAG-$COMMIT_HASH"
+          echo "::set-output name=tag_name::$TAG_NAME"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        with:
+          tag_name: ${{ steps.generate_tag.outputs.tag_name }}
+          release_name: "Release ${{ steps.generate_tag.outputs.tag_name }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Docker image to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./api-commande-latest.tar.gz
+          asset_name: api-commande-latest.tar.gz
+          asset_content_type: application/gzip
+          
+      - name: Zip source code
+        run: |
+          zip -r API_Commande.zip .
+
+      - name: Upload Release Assets - API_Produit
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./API_Commande.zip
+          asset_name: API_Commande.zip
+          asset_content_type: application/zip
+    
