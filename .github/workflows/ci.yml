@@ -49,6 +49,9 @@ jobs:
       
     - name: Setup Moq
       run: dotnet add package Moq
+
+    - name: Setup Pomelo.EntityFrameworkCore.MySql
+      run: dotnet add package Pomelo.EntityFrameworkCore.MySql
       
     - name: Clean
       run: |
