@@ -47,6 +47,9 @@ jobs:
     - name: Setup Microsoft.NET.Test.Sdk
       run: dotnet add package Microsoft.NET.Test.Sdk
       
+    - name: Setup Moq
+      run: dotnet add package Moq
+      
     - name: Clean
       run: |
         dotnet clean
