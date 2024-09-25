@@ -31,8 +31,8 @@ namespace YourNamespace.Tests
         {
             var mockOrders = new List<Commande>
             {
-                new Commande { Id = 1, ClientID = 1, Total = 100 },
-                new Commande { Id = 2, ClientID = 2, Total = 200 }
+                new Commande { Id = 1, CustomerName = "Jean JAQUES", OrderDate = new DateTime(1389102), TotalAmount = 10000, ClientID = 19, ProduitIDs = new List<int>() { 3 } },
+                new Commande { Id = 2, CustomerName = "Daniel DUPONT", OrderDate = new DateTime(13893202), TotalAmount = 50, ClientID = 32, ProduitIDs = new List<int>() { 1, 2, 8 } }
             }.AsQueryable();
 
             var mockSet = new Mock<DbSet<Commande>>();
@@ -54,7 +54,7 @@ namespace YourNamespace.Tests
         [Fact]
         public async Task GetOrder_OrderExists_ReturnsOrder()
         {
-            var mockOrder = new Commande { Id = 1, ClientID = 1, Total = 100 };
+            var mockOrder = new Commande { Id = 1, CustomerName = "Jean JAQUES", OrderDate = new DateTime(1389102), TotalAmount = 10000, ClientID = 19, ProduitIDs = new List<int>() { 3 } };
             var mockSet = new Mock<DbSet<Commande>>();
             mockSet.Setup(m => m.FindAsync(1)).ReturnsAsync(mockOrder);
 
@@ -82,7 +82,7 @@ namespace YourNamespace.Tests
         [Fact]
         public async Task PostOrder_ValidOrder_ReturnsCreatedResponse()
         {
-            var newOrder = new Commande { Id = 3, ClientID = 3, Total = 300 };
+            var newOrder = new Commande { Id = 2, CustomerName = "Daniel DUPONT", OrderDate = new DateTime(13893202), TotalAmount = 50, ClientID = 32, ProduitIDs = new List<int>() { 1, 2, 8 } };
 
             var mockSet = new Mock<DbSet<Commande>>();
             _mockContext.Setup(c => c.Orders).Returns(mockSet.Object);
@@ -99,7 +99,7 @@ namespace YourNamespace.Tests
         {
             _controller.ModelState.AddModelError("Total", "Required");
 
-            var newOrder = new Commande { Id = 3, ClientID = 3 };
+            var newOrder = new Commande { Id = 2, CustomerName = "Jean CHRISTIAN", OrderDate = new DateTime(3293202), TotalAmount = 50, ClientID = 32, ProduitIDs = new List<int>() { 8 } };
 
             var result = await _controller.PostOrder(newOrder);
 
@@ -109,7 +109,7 @@ namespace YourNamespace.Tests
         [Fact]
         public async Task DeleteOrder_OrderExists_ReturnsOk()
         {
-            var mockOrder = new Commande { Id = 1, ClientID = 1, Total = 100 };
+            var mockOrder = new Commande { Id = 2, CustomerName = "Jean CHRISTIAN", OrderDate = new DateTime(3293202), TotalAmount = 50, ClientID = 32, ProduitIDs = new List<int>() { 8 } };
 
             var mockSet = new Mock<DbSet<Commande>>();
             mockSet.Setup(m => m.FindAsync(1)).ReturnsAsync(mockOrder);
